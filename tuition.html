@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuition Pro | Mom's Assistant</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: auto; }
+
+        .rt-header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white; padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        }
+        #liveClock { font-size: 2rem; font-weight: bold; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #e2e8f0; }
+        .stat-card div { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+
+        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        
+        .flex-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        input, select { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; }
+        
+        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-save { background: var(--success); color: white; }
+        
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .clear-btn { font-size: 0.7rem; color: var(--danger); background: none; border: 1px solid var(--danger); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+        .clear-btn:hover { background: var(--danger); color: white; }
+
+        .attendance-tools { display: flex; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; }
+        .tool-link { color: var(--primary); cursor: pointer; text-decoration: underline; font-weight: bold; }
+
+        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        .del-icon { color: var(--danger); cursor: pointer; margin-left: 10px; font-size: 1.2rem; }
+
+        .history-table-wrapper { overflow-x: auto; max-height: 350px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; background: #f8fafc; padding: 12px; font-size: 0.8rem; position: sticky; top: 0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
+        .bg-paid { background: #d1fae5; color: #065f46; }
+        .bg-danger { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="rt-header">
+        <div id="liveDate">...</div>
+        <div id="liveClock">00:00:00</div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><small>Registered</small><div id="statTotal">0</div></div>
+        <div class="stat-card"><small>Paid Today</small><div id="statPaid" style="color: var(--success)">0</div></div>
+        <div class="stat-card"><small>Pending</small><div id="statPending" style="color: var(--danger)">0</div></div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h3 style="margin:0">Register Student</h3>
+            <button class="clear-btn" onclick="clearAllStudents()">Reset Names</button>
+        </div>
+        <div class="flex-group">
+            <input type="text" id="newStudent" placeholder="Name">
+            <select id="newGrade" style="max-width: 80px;"><option>G1</option><option>G2</option><option>G3</option></select>
+            <input type="number" id="newFee" placeholder="Fee" value="50" style="max-width: 100px;">
+        </div>
+        <button class="btn btn-add" onclick="addStudent()">+ Add Student</button>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h3 style="margin:0">Today's Class</h3>
+            <select id="sessionType" style="max-width: 150px;">
+                <option value="Morning">🌅 Morning</option>
+                <option value="Evening">🌙 Evening</option>
+            </select>
+        </div>
+        <div class="attendance-tools">
+            <span class="tool-link" onclick="toggleAll(true)">Check All</span>
+            <span style="color:#ddd">|</span>
+            <span class="tool-link" onclick="toggleAll(false)">Uncheck All</span>
+        </div>
+        <div id="attendanceList"></div>
+        <button class="btn btn-save" style="margin-top:20px" onclick="saveSession()">💾 Save Class Data</button>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h3 style="margin:0; color: var(--primary);">💰 Earnings Summary</h3>
+            <button class="clear-btn" onclick="clearRecords()">Reset Totals</button>
+        </div>
+        <div id="earningsAnalysis"></div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h3 style="margin:0">Payment History</h3>
+            <button class="clear-btn" onclick="clearRecords()">Clear History</button>
+        </div>
+        <input type="text" id="search" placeholder="🔍 Search student name..." onkeyup="renderHistory()" style="margin-bottom:15px; width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+        <div class="history-table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Date/Time</th><th>Name</th><th>Session</th><th>Status</th><th>Fee</th></tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+        <button class="btn" style="background:#1e293b; color:white; margin-top:15px;" onclick="exportCSV()">📊 Export to Excel</button>
+    </div>
+</div>
+
+<script>
+    let students = JSON.parse(localStorage.getItem('tuition_v5_students')) || [];
+    let records = JSON.parse(localStorage.getItem('tuition_v5_records')) || [];
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleTimeString();
+        document.getElementById('liveDate').innerText = now.toDateString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function addStudent() {
+        const name = document.getElementById('newStudent').value;
+        const grade = document.getElementById('newGrade').value;
+        const fee = document.getElementById('newFee').value;
+        if(!name || !fee) return alert("Fill Name & Fee");
+        students.push({ id: Date.now(), name, grade, fee: parseFloat(fee) });
+        localStorage.setItem('tuition_v5_students', JSON.stringify(students));
+        document.getElementById('newStudent').value = '';
+        renderAll();
+    }
+
+    function clearAllStudents() {
+        if(confirm("Delete ALL registered students?")) {
+            students = [];
+            localStorage.setItem('tuition_v5_students', JSON.stringify(students));
+            renderAll();
+        }
+    }
+
+    function clearRecords() {
+        if(confirm("WARNING: This will delete ALL payment records and earnings analysis. Export to Excel first! Are you sure?")) {
+            records = [];
+            localStorage.setItem('tuition_v5_records', JSON.stringify(records));
+            renderAll();
+        }
+    }
+
+    function deleteOne(id) {
+        if(confirm("Remove this student?")) {
+            students = students.filter(s => s.id !== id);
+            localStorage.setItem('tuition_v5_students', JSON.stringify(students));
+            renderAll();
+        }
+    }
+
+    function toggleAll(val) {
+        document.querySelectorAll('.pay-check').forEach(cb => cb.checked = val);
+    }
+
+    function renderAll() {
+        const list = document.getElementById('attendanceList');
+        list.innerHTML = students.length ? '' : '<p style="color:gray; text-align:center">No students registered.</p>';
+        students.forEach(s => {
+            list.innerHTML += `
+                <div class="student-item">
+                    <div><b>${s.name}</b> <small>(${s.grade})</small></div>
+                    <div style="display:flex; align-items:center;">
+                        <input type="checkbox" class="pay-check" data-id="${s.id}" style="width:18px; height:18px;">
+                        <span class="del-icon" onclick="deleteOne(${s.id})">🗑️</span>
+                    </div>
+                </div>
+            `;
+        });
+        renderHistory();
+        renderEarnings();
+        updateStats();
+    }
+
+    function saveSession() {
+        const session = document.getElementById('sessionType').value;
+        const now = new Date();
+        const checks = document.querySelectorAll('.pay-check');
+        if(!checks.length) return alert("Register students first");
+
+        checks.forEach(cb => {
+            const stu = students.find(s => s.id == cb.getAttribute('data-id'));
+            records.push({
+                date: now.toLocaleDateString(),
+                time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                name: stu.name, grade: stu.grade, session: session,
+                status: cb.checked ? 'PAID' : 'PENDING',
+                amount: cb.checked ? stu.fee : 0
+            });
+        });
+
+        localStorage.setItem('tuition_v5_records', JSON.stringify(records));
+        alert("Session saved successfully!");
+        toggleAll(false);
+        renderAll();
+    }
+
+    function updateStats() {
+        const today = new Date().toLocaleDateString();
+        const todayRecs = records.filter(r => r.date === today);
+        document.getElementById('statTotal').innerText = students.length;
+        document.getElementById('statPaid').innerText = todayRecs.filter(r => r.status === 'PAID').length;
+        document.getElementById('statPending').innerText = todayRecs.filter(r => r.status === 'PENDING').length;
+    }
+
+    function renderEarnings() {
+        const container = document.getElementById('earningsAnalysis');
+        const grouped = records.reduce((acc, curr) => {
+            acc[curr.date] = (acc[curr.date] || 0) + curr.amount;
+            return acc;
+        }, {});
+        const dates = Object.keys(grouped).sort((a,b) => new Date(b) - new Date(a));
+        container.innerHTML = dates.length ? '' : '<p style="color:gray">No earnings recorded.</p>';
+        dates.forEach(d => {
+            container.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dotted #ccc;">
+                <span>📅 ${d}</span><b style="color:var(--success)">+ ${grouped[d]}</b></div>`;
+        });
+    }
+
+    function renderHistory() {
+        const query = document.getElementById('search').value.toLowerCase();
+        const body = document.getElementById('historyBody');
+        body.innerHTML = records.filter(r => r.name.toLowerCase().includes(query)).reverse().map(r => `
+            <tr>
+                <td>${r.date}<br><small>${r.time}</small></td>
+                <td><b>${r.name}</b></td>
+                <td>${r.session}</td>
+                <td><span class="badge ${r.status === 'PAID' ? 'bg-paid' : 'bg-danger'}">${r.status}</span></td>
+                <td>${r.amount || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    function exportCSV() {
+        let csv = "Date,Time,Name,Grade,Session,Status,Amount\n";
+        records.forEach(r => csv += `${r.date},${r.time},"${r.name}",${r.grade},${r.session},${r.status},${r.amount}\n`);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Tuition_Data_${new Date().toLocaleDateString()}.csv`;
+        a.click();
+    }
+
+    renderAll();
+</script>
+
+</body>
+</html>
