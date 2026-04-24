@@ -3,270 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tuition Pro | Mom's Assistant</title>
+    <title>For My Queen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@200;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --primary: #4f46e5;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --card: #ffffff;
+            --primary: #ff4d6d;
+            --dark: #0a0a0a;
+            --soft: #ffb3c1;
+            --bg-gradient: radial-gradient(circle at center, #2b0000 0%, #0a0a0a 100%);
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .container { max-width: 800px; margin: auto; }
-
-        .rt-header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white; padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px;
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+        
+        body {
+            background-color: var(--dark);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            transition: background 1s ease;
         }
-        #liveClock { font-size: 2rem; font-weight: bold; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-card div { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        canvas#bg { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
 
-        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
-        
-        .flex-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        input, select { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; }
-        
-        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; }
-        .btn-add { background: var(--primary); color: white; }
-        .btn-save { background: var(--success); color: white; }
-        
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .clear-btn { font-size: 0.7rem; color: var(--danger); background: none; border: 1px solid var(--danger); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
-        .clear-btn:hover { background: var(--danger); color: white; }
+        /* --- LOCK SCREEN --- */
+        #lock-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--dark);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease;
+        }
 
-        .attendance-tools { display: flex; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; }
-        .tool-link { color: var(--primary); cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .lock-box {
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            text-align: center;
+        }
 
-        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        .del-icon { color: var(--danger); cursor: pointer; margin-left: 10px; font-size: 1.2rem; }
+        input {
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: white;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
+        }
 
-        .history-table-wrapper { overflow-x: auto; max-height: 350px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; background: #f8fafc; padding: 12px; font-size: 0.8rem; position: sticky; top: 0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
-        
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
-        .bg-paid { background: #d1fae5; color: #065f46; }
-        .bg-danger { background: #fee2e2; color: #991b1b; }
+        /* --- MAIN CONTENT --- */
+        #main-content { display: none; opacity: 0; transition: opacity 2s ease; }
+
+        section {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        h1, h2 { font-family: 's'; color: var(--primary); }
+        h1 { font-size: clamp(3rem, 10vw, 6rem); }
+        h2 { font-size: 3.5rem; margin-bottom: 30px; }
+
+        /* --- MOOD SLIDER --- */
+        .mood-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        /* --- TIMELINE --- */
+        .timeline { border-left: 2px solid var(--primary); margin: 20px; padding-left: 30px; text-align: left; max-width: 500px; }
+        .moment { margin-bottom: 40px; position: relative; }
+        .moment::before { content: '❤'; position: absolute; left: -42px; color: var(--primary); background: var(--dark); padding: 2px; }
+
+        /* --- JAR & COUPONS --- */
+        .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 800px; }
+        .heart-note { font-size: 2.5rem; filter: grayscale(1); transition: 0.4s; }
+        .heart-note:hover { filter: grayscale(0); transform: scale(1.4); }
+
+        .coupon {
+            background: white; color: var(--dark); padding: 20px; 
+            border-radius: 15px; border: 3px dashed var(--primary); 
+            font-weight: bold; width: 200px; transition: 0.3s;
+        }
+        .claimed { opacity: 0.4; text-decoration: line-through; transform: rotate(-5deg); }
+
+        /* --- TYPEWRITER --- */
+        #typewriter { max-width: 700px; font-size: 1.2rem; line-height: 1.8; color: var(--soft); min-height: 150px; }
+
+        /* --- INVITE --- */
+        .invite-btns { position: relative; height: 150px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .btn { padding: 15px 40px; border-radius: 50px; border: none; font-weight: bold; font-size: 1.1rem; }
+        .btn-yes { background: var(--primary); color: white; box-shadow: 0 0 20px var(--primary); }
+        .btn-no { background: #444; color: #ccc; z-index: 10; }
+
+        footer { padding: 40px; background: rgba(0,0,0,0.8); color: var(--primary); font-family: 'Dancing Script'; font-size: 2rem; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="rt-header">
-        <div id="liveDate">...</div>
-        <div id="liveClock">00:00:00</div>
+    <canvas id="bg"></canvas>
+
+    <div class="mood-control">
+        Sweet <input type="range" id="mood" min="0" max="100" value="0"> Spicy
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card"><small>Registered</small><div id="statTotal">0</div></div>
-        <div class="stat-card"><small>Paid Today</small><div id="statPaid" style="color: var(--success)">0</div></div>
-        <div class="stat-card"><small>Pending</small><div id="statPending" style="color: var(--danger)">0</div></div>
+    <div id="lock-screen">
+        <div class="lock-box">
+            <h2 style="font-size: 2rem;">The Private Vault</h2>
+            <p>What is my favorite nickname for you?</p>
+            <input type="text" id="pass-input" placeholder="Enter the secret word...">
+            <br><br>
+            <button class="btn btn-yes" onclick="checkPass()">Unlock My Heart</button>
+        </div>
     </div>
 
-    <div class="card">
-        <div class="section-header">
-            <h3 style="margin:0">Register Student</h3>
-            <button class="clear-btn" onclick="clearAllStudents()">Reset Names</button>
-        </div>
-        <div class="flex-group">
-            <input type="text" id="newStudent" placeholder="Name">
-            <select id="newGrade" style="max-width: 80px;"><option>G1</option><option>G2</option><option>G3</option></select>
-            <input type="number" id="newFee" placeholder="Fee" value="50" style="max-width: 100px;">
-        </div>
-        <button class="btn btn-add" onclick="addStudent()">+ Add Student</button>
+    <div id="main-content">
+        <section class="hero">
+            <h1 id="bday-text">Happy Birthday Safana ma, My Usuru</h1>
+            <div id="countdown" style="display: flex; gap: 15px; margin-top: 20px;">
+                <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:10px;"><span id="days">0</span>d</div>
+                <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:10px;"><span id="hours">0</span>h</div>
+                <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:10px;"><span id="mins">0</span>m</div>
+                <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:10px;"><span id="secs">0</span>s</div>
+            </div>
+            <p style="margin-top: 40px; font-size: 0.8rem; letter-spacing: 4px; opacity: 0.6;">SCROLL TO DISCOVER</p>
+        </section>
+
+        <section>
+            <h2>Our Story</h2>
+            <div class="timeline">
+                <div class="moment"><h3>The First Day</h3><p>Ni enaku message potai.Appidiye ennaium mayakitai.</p></div>
+                <div class="moment"><h3>The First "I Love You"</h3><p>Naanga night night a rasichi rasichi pesinom.Athule naan wilunduten.</p></div>
+                <div class="moment"><h3>Today</h3><p>Indaki oonda Special Day.Happy birthday usuru.Naanga eppome onda ottikondu ikanum.Enna nalla stress aakama parthu ko.</p></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Reason Jar</h2>
+            <p style="margin-bottom: 20px;">Owworu Heart a touch pannu ma I love about you...</p>
+            <div class="grid" id="jar"></div>
+        </section>
+
+        <section id="spicy-section">
+            <h2 id="passion-title">The Fire Inside</h2>
+            <div id="typewriter"></div>
+        </section>
+
+        <section>
+            <h2>Birthday Coupons. Message pannu ithula ethu hal wenum ndu selli</h2>
+            <div class="grid">
+                <div class="coupon" onclick="claim(this, 'A Romantic Dinner')">Love</div>
+                <div class="coupon" onclick="claim(this, 'A 30-Min Massage')">Lust</div>
+                <div class="coupon" onclick="claim(this, 'One Secret Wish')">Happy</div>
+            </div>
+        </section>
+
+        <section id="invite">
+            <h2>Ennaya adikkama , esamal parthu kolla eluma? </h2>
+            <div class="invite-btns">
+                <button class="btn btn-yes" onclick="celebrate()">YES!</button>
+                <button class="btn btn-no" id="no-btn">NO</button>
+            </div>
+        </section>
+
+        <footer>Forever Yours, Fazly</footer>
     </div>
 
-    <div class="card">
-        <div class="section-header">
-            <h3 style="margin:0">Today's Class</h3>
-            <select id="sessionType" style="max-width: 150px;">
-                <option value="Morning">🌅 Morning</option>
-                <option value="Evening">🌙 Evening</option>
-            </select>
-        </div>
-        <div class="attendance-tools">
-            <span class="tool-link" onclick="toggleAll(true)">Check All</span>
-            <span style="color:#ddd">|</span>
-            <span class="tool-link" onclick="toggleAll(false)">Uncheck All</span>
-        </div>
-        <div id="attendanceList"></div>
-        <button class="btn btn-save" style="margin-top:20px" onclick="saveSession()">💾 Save Class Data</button>
-    </div>
-
-    <div class="card">
-        <div class="section-header">
-            <h3 style="margin:0; color: var(--primary);">💰 Earnings Summary</h3>
-            <button class="clear-btn" onclick="clearRecords()">Reset Totals</button>
-        </div>
-        <div id="earningsAnalysis"></div>
-    </div>
-
-    <div class="card">
-        <div class="section-header">
-            <h3 style="margin:0">Payment History</h3>
-            <button class="clear-btn" onclick="clearRecords()">Clear History</button>
-        </div>
-        <input type="text" id="search" placeholder="🔍 Search student name..." onkeyup="renderHistory()" style="margin-bottom:15px; width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box;">
-        <div class="history-table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>Date/Time</th><th>Name</th><th>Session</th><th>Status</th><th>Fee</th></tr>
-                </thead>
-                <tbody id="historyBody"></tbody>
-            </table>
-        </div>
-        <button class="btn" style="background:#1e293b; color:white; margin-top:15px;" onclick="exportCSV()">📊 Export to Excel</button>
-    </div>
-</div>
-
-<script>
-    let students = JSON.parse(localStorage.getItem('tuition_v5_students')) || [];
-    let records = JSON.parse(localStorage.getItem('tuition_v5_records')) || [];
-
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('liveClock').innerText = now.toLocaleTimeString();
-        document.getElementById('liveDate').innerText = now.toDateString();
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    function addStudent() {
-        const name = document.getElementById('newStudent').value;
-        const grade = document.getElementById('newGrade').value;
-        const fee = document.getElementById('newFee').value;
-        if(!name || !fee) return alert("Fill Name & Fee");
-        students.push({ id: Date.now(), name, grade, fee: parseFloat(fee) });
-        localStorage.setItem('tuition_v5_students', JSON.stringify(students));
-        document.getElementById('newStudent').value = '';
-        renderAll();
-    }
-
-    function clearAllStudents() {
-        if(confirm("Delete ALL registered students?")) {
-            students = [];
-            localStorage.setItem('tuition_v5_students', JSON.stringify(students));
-            renderAll();
+    <script>
+        // 1. PASSWORD PROTECTION
+        function checkPass() {
+            const val = document.getElementById('pass-input').value.toLowerCase();
+            // CHANGE THIS WORD to your specific nickname or secret word
+            if(val === "hubby" || val === "babe" || val === "love") {
+                document.getElementById('lock-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('lock-screen').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                    setTimeout(() => document.getElementById('main-content').style.opacity = '1', 100);
+                }, 1500);
+            } else {
+                alert("Incorrect... Only my lover knows the secret.");
+            }
         }
-    }
 
-    function clearRecords() {
-        if(confirm("WARNING: This will delete ALL payment records and earnings analysis. Export to Excel first! Are you sure?")) {
-            records = [];
-            localStorage.setItem('tuition_v5_records', JSON.stringify(records));
-            renderAll();
-        }
-    }
-
-    function deleteOne(id) {
-        if(confirm("Remove this student?")) {
-            students = students.filter(s => s.id !== id);
-            localStorage.setItem('tuition_v5_students', JSON.stringify(students));
-            renderAll();
-        }
-    }
-
-    function toggleAll(val) {
-        document.querySelectorAll('.pay-check').forEach(cb => cb.checked = val);
-    }
-
-    function renderAll() {
-        const list = document.getElementById('attendanceList');
-        list.innerHTML = students.length ? '' : '<p style="color:gray; text-align:center">No students registered.</p>';
-        students.forEach(s => {
-            list.innerHTML += `
-                <div class="student-item">
-                    <div><b>${s.name}</b> <small>(${s.grade})</small></div>
-                    <div style="display:flex; align-items:center;">
-                        <input type="checkbox" class="pay-check" data-id="${s.id}" style="width:18px; height:18px;">
-                        <span class="del-icon" onclick="deleteOne(${s.id})">🗑️</span>
-                    </div>
-                </div>
-            `;
+        // 2. MOOD SLIDER
+        document.getElementById('mood').addEventListener('input', (e) => {
+            const val = e.target.value;
+            const r = Math.floor((val / 100) * 100);
+            document.body.style.background = `rgb(${r}, 0, 0)`;
+            if(val > 70) {
+                document.getElementById('passion-title').innerText = "My Deepest Desires";
+            } else {
+                document.getElementById('passion-title').innerText = "The Fire Inside";
+            }
         });
-        renderHistory();
-        renderEarnings();
-        updateStats();
-    }
 
-    function saveSession() {
-        const session = document.getElementById('sessionType').value;
-        const now = new Date();
-        const checks = document.querySelectorAll('.pay-check');
-        if(!checks.length) return alert("Register students first");
+        // 3. REASON JAR
+        const reasons = ["Your Smile", "Your Kindness", "your boobs", "Your Intelligence", "Your Strength", "Your lips", "Your careness", "Your Fullbody"];
+        const jar = document.getElementById('jar');
+        reasons.forEach(r => {
+            const h = document.createElement('span');
+            h.className = 'heart-note';
+            h.innerText = '❤';
+            h.onclick = () => alert("I love... " + r);
+            jar.appendChild(h);
+        });
 
-        checks.forEach(cb => {
-            const stu = students.find(s => s.id == cb.getAttribute('data-id'));
-            records.push({
-                date: now.toLocaleDateString(),
-                time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                name: stu.name, grade: stu.grade, session: session,
-                status: cb.checked ? 'PAID' : 'PENDING',
-                amount: cb.checked ? stu.fee : 0
+        // 4. TYPEWRITER
+        const text = "Every time I see you, my heart skips. But it's more than that. I crave your presence, your touch, and the way you make me feel like the only man in the world. This Saturday is all about you, but in my heart, every day is yours. I want to spend it exploring every part of who you are...";
+        let i = 0;
+        function typeEffect() {
+            if (i < text.length) {
+                document.getElementById("typewriter").innerHTML += text.charAt(i);
+                i++; setTimeout(typeEffect, 50);
+            }
+        }
+        const observer = new IntersectionObserver(entries => {
+            if(entries[0].isIntersecting) typeEffect();
+        }, { threshold: 0.5 });
+        observer.observe(document.getElementById('typewriter'));
+
+        // 5. COUPONS & INVITE
+        function claim(el, gift) {
+            el.classList.add('claimed');
+            el.innerText = "REDEEMED ✓";
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            alert("You redeemed: " + gift);
+        }
+
+        const noBtn = document.getElementById('no-btn');
+        noBtn.addEventListener('mouseover', () => {
+            const x = Math.random() * (window.innerWidth - 100);
+            const y = Math.random() * (window.innerHeight - 50);
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = x + 'px';
+            noBtn.style.top = y + 'px';
+        });
+
+        function celebrate() {
+            confetti({ particleCount: 200, spread: 100, origin: { y: 0.7 }, colors: ['#ff4d6d', '#ffffff'] });
+            alert("Enakku nalla waiku rusiya cook panni theethi udu! I love you!");
+        }
+
+        // 6. COUNTDOWN
+        function updateTime() {
+            const now = new Date();
+            const sat = new Date(now);
+            sat.setDate(now.getDate() + (6 - now.getDay() + 7) % 7);
+            sat.setHours(0,0,0,0);
+            const d = sat - now;
+            document.getElementById('days').innerText = Math.floor(d/(1000*60*60*24));
+            document.getElementById('hours').innerText = Math.floor((d/(1000*60*60))%24);
+            document.getElementById('mins').innerText = Math.floor((d/1000/60)%60);
+            document.getElementById('secs').innerText = Math.floor((d/1000)%60);
+        }
+        setInterval(updateTime, 1000);
+
+        // 7. BACKGROUND PARTICLES
+        const canvas = document.getElementById('bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let dots = [];
+        for(let i=0; i<80; i++) dots.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, v: Math.random()*0.5});
+        function render() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(255,77,109,0.5)";
+            dots.forEach(d => {
+                d.y -= d.v; if(d.y < 0) d.y = canvas.height;
+                ctx.beginPath(); ctx.arc(d.x, d.y, d.s, 0, Math.PI*2); ctx.fill();
             });
-        });
-
-        localStorage.setItem('tuition_v5_records', JSON.stringify(records));
-        alert("Session saved successfully!");
-        toggleAll(false);
-        renderAll();
-    }
-
-    function updateStats() {
-        const today = new Date().toLocaleDateString();
-        const todayRecs = records.filter(r => r.date === today);
-        document.getElementById('statTotal').innerText = students.length;
-        document.getElementById('statPaid').innerText = todayRecs.filter(r => r.status === 'PAID').length;
-        document.getElementById('statPending').innerText = todayRecs.filter(r => r.status === 'PENDING').length;
-    }
-
-    function renderEarnings() {
-        const container = document.getElementById('earningsAnalysis');
-        const grouped = records.reduce((acc, curr) => {
-            acc[curr.date] = (acc[curr.date] || 0) + curr.amount;
-            return acc;
-        }, {});
-        const dates = Object.keys(grouped).sort((a,b) => new Date(b) - new Date(a));
-        container.innerHTML = dates.length ? '' : '<p style="color:gray">No earnings recorded.</p>';
-        dates.forEach(d => {
-            container.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dotted #ccc;">
-                <span>📅 ${d}</span><b style="color:var(--success)">+ ${grouped[d]}</b></div>`;
-        });
-    }
-
-    function renderHistory() {
-        const query = document.getElementById('search').value.toLowerCase();
-        const body = document.getElementById('historyBody');
-        body.innerHTML = records.filter(r => r.name.toLowerCase().includes(query)).reverse().map(r => `
-            <tr>
-                <td>${r.date}<br><small>${r.time}</small></td>
-                <td><b>${r.name}</b></td>
-                <td>${r.session}</td>
-                <td><span class="badge ${r.status === 'PAID' ? 'bg-paid' : 'bg-danger'}">${r.status}</span></td>
-                <td>${r.amount || '-'}</td>
-            </tr>
-        `).join('');
-    }
-
-    function exportCSV() {
-        let csv = "Date,Time,Name,Grade,Session,Status,Amount\n";
-        records.forEach(r => csv += `${r.date},${r.time},"${r.name}",${r.grade},${r.session},${r.status},${r.amount}\n`);
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `Tuition_Data_${new Date().toLocaleDateString()}.csv`;
-        a.click();
-    }
-
-    renderAll();
-</script>
-
+            requestAnimationFrame(render);
+        }
+        render();
+    </script>
 </body>
 </html>
